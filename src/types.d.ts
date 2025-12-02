@@ -161,8 +161,8 @@ export type Provider<T> = MaybeCallableProvider<T> &
         map<V>(callback: (elem: U) => V): Result<Array<V>>;
       }
     : {
-        [K in Exclude<
-          keyof T,
+        [K in keyof T as Exclude<
+          K,
           symbol | keyof StubBase<never>
         >]: MethodOrProperty<T[K]>;
       } & {
