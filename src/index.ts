@@ -71,6 +71,9 @@ export interface RpcSession<T extends RpcCompatible<T> = undefined> {
   // Waits until the peer is not waiting on any more promise resolutions from us. This is useful
   // in particular to decide when a batch is complete.
   drain(): Promise<void>;
+  // experimental
+  toJSON(): any;
+  readonly _session: RpcSessionImpl['_session'];
 }
 export const RpcSession: {
   new <T extends RpcCompatible<T> = undefined>(

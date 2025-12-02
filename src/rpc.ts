@@ -2,8 +2,8 @@
 // Licensed under the MIT license found in the LICENSE.txt file or at:
 //     https://opensource.org/license/mit
 
-import { StubHook, RpcPayload, RpcStub, PropertyPath, PayloadStubHook, ErrorStubHook, RpcTarget, unwrapStubAndPath } from "./core.js";
-import { Devaluator, Evaluator, ExportId, ImportId, Exporter, Importer, serialize } from "./serialize.js";
+import { ErrorStubHook, PayloadStubHook, PropertyPath, RpcPayload, RpcStub, StubHook, unwrapStubAndPath } from "./core.js";
+import { Devaluator, Evaluator, Exporter, ExportId, Importer, ImportId } from "./serialize.js";
 
 /**
  * Interface for an RPC transport, which is a simple bidirectional message stream. Implement this
@@ -155,6 +155,15 @@ class ImportTableEntry {
     if (this.remoteRefcount > 0) {
       this.session.sendRelease(this.importId, this.remoteRefcount);
       this.remoteRefcount = 0;
+    }
+  }
+
+  toJSON() {
+    return {
+      importId: this.importId,
+      localRefcount: this.localRefcount,
+      remoteRefcount: this.remoteRefcount,
+      onBrokenRegistrations: this.onBrokenRegistrations
     }
   }
 };
@@ -749,6 +758,16 @@ class RpcSessionImpl implements Importer, Exporter {
     }
     return result;
   }
+
+  toJSON() {
+    return {
+      type: "RpcSession",
+      imports: this.imports.map(entry => entry ? entry.toJSON() : undefined),
+      exports: this.exports.map(entry => entry ? {refcount: entry.refcount} : undefined),
+      nextExportId: this.nextExportId,
+      pullCount: this.pullCount,
+    }
+  }
 }
 
 // Public interface that wraps RpcSession and hides private implementation details (even from
@@ -768,6 +787,10 @@ export class RpcSession {
     this.#mainStub = new RpcStub(this.#session.getMainImport());
   }
 
+  get _session() {
+    return this.#session;
+  }
+
   getRemoteMain(): RpcStub {
     return this.#mainStub;
   }
@@ -778,5 +801,9 @@ export class RpcSession {
 
   drain(): Promise<void> {
     return this.#session.drain();
+  }
+
+  toJSON() {
+    return this.#session.toJSON();
   }
 }
